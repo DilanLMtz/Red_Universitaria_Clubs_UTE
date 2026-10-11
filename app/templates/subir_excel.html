@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Subir Lista de Alumnos - UTE</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f4f6f9; margin: 0; padding: 40px; }
+        .container { max-width: 500px; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); margin: auto; }
+        h2 { color: #2c3e50; }
+        form { margin-top: 20px; }
+        input[type="file"] { display: block; margin-bottom: 20px; width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; }
+        button { background: #27ae60; color: white; border: none; padding: 10px 20px; font-size: 16px; border-radius: 4px; cursor: pointer; width: 100%; }
+        button:hover { background: #219653; }
+        .mensaje { margin-top: 15px; padding: 10px; background: #e8f8f5; border-left: 4px solid #27ae60; color: #117a65; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Subir Lista de Alumnos (Excel)</h2>
+        <p>Sube el archivo exportado de Google Forms para actualizar las inscripciones de los clubs.</p>
+        
+        <form action="/coordinador/subir-excel" method="POST" enctype="multipart/form-data">
+            <input type="file" name="archivo_excel" accept=".xlsx, .xls" required>
+            <button type="submit">Procesar e Importar Alumnos</button>
+        </form>
+
+        {% if mensaje %}
+            <div class="mensaje">{{ mensaje }}</div>
+        {% endif %}
+    </div>
+</body>
+</html>
