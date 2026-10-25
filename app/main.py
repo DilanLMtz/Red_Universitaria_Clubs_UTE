@@ -4,6 +4,10 @@ from dotenv import load_dotenv
 import os
 import pandas as pd
 from werkzeug.utils import secure_filename
+import qrcode
+import io
+import base64
+from datetime import date
 
 load_dotenv()
 
@@ -23,7 +27,6 @@ def obtener_conexion():
         print(f"Error de conexión a la BD: {err}")
         return None
 
-# --- RUTA PRINCIPAL Y LOGIN UNIFICADO ---
 
 @app.route('/')
 def index():
@@ -74,7 +77,7 @@ def logout():
     session.clear()
     return redirect(url_for('index'))
 
-# --- RUTAS PROTEGIDAS (Con el 'return' obligatorio para bloquear URLs) ---
+# --- RUTAS PROTEGIDAS ('return' obligatorio para bloquear URLs) ---
 
 @app.route('/alumno')
 def panel_alumno():
@@ -88,6 +91,38 @@ def panel_coordinador():
         return redirect(url_for('index'))  # ¡Bloquea el acceso directo si no hay sesión de coordinador!
     return render_template('panel_coordinador.html', nombre=session.get('nombre'))
 
+@app.route('/coordinador/generar-qr')
+def generar_qr():
+    """Genera un código QR dinámico para el club que coordina el usuario actual."""
+    if 'id_usuario' not in session:
+        return redirect(url_for('index'))
+    
+    id_usuario = session['id_usuario']
+    
+    conexion = obtener_conexion()
+    if not conexion:
+        return render_template('panel_coordinador.html', nombre=session.get('nombre'), error="Error de base de datos.")
+    
+    # Se agrega buffered=True para evitar el error "Unread result found"
+    cursor = conexion.cursor(dictionary=True, buffered=True)
+    cursor.execute("SELECT id_club, nombre_club FROM Clubs WHERE id_coordinador = %s", (id_usuario,))
+    club = cursor.fetchone()
+    cursor.close()
+    conexion.close()
+    
+    if not club:
+        return render_template('panel_coordinador.html', nombre=session.get('nombre'), error="No tienes ningún club asignado en el sistema.")
+    
+    hoy = date.today().isoformat()
+    contenido_qr = f"UTE_CLUB_{club['id_club']}_DATE_{hoy}"
+    
+    img = qrcode.make(contenido_qr)
+    buffered = io.BytesIO()
+    img.save(buffered, format="PNG")
+    qr_base64 = base64.b64encode(buffered.getvalue()).decode("utf-8")
+    
+    return render_template('generar_qr.html', club=club, qr_base64=qr_base64, fecha=hoy)
+
 @app.route('/coordinador/subir-excel', methods=['GET', 'POST'])
 def vista_subir_excel():
     if 'id_usuario' not in session:
@@ -97,23 +132,23 @@ def vista_subir_excel():
     if request.method == 'GET':
         return render_template('subir_excel.html')
     
-    # Si entra por POST, procesa el archivo Excel (tu lógica anterior...)
+    # Si entra por POST, procesa el archivo Excel 
     archivo = request.files.get('archivo_excel')
     if not archivo or archivo.filename == '':
-        return render_template('subir_excel.html', mensaje="❌ No se seleccionó ningún archivo.")
+        return render_template('subir_excel.html', mensaje=" No se seleccionó ningún archivo.")
     
     try:
         df = pd.read_excel(archivo)
     except Exception as e:
-        return render_template('subir_excel.html', mensaje=f"❌ Error al leer el Excel: {e}")
+        return render_template('subir_excel.html', mensaje=f" Error al leer el Excel: {e}")
 
     columnas_requeridas = {'matricula', 'nombre_completo', 'nombre_club'}
     if not columnas_requeridas.issubset(df.columns):
-        return render_template('subir_excel.html', mensaje=f"❌ El Excel debe tener las columnas: {list(columnas_requeridas)}")
+        return render_template('subir_excel.html', mensaje=f" El Excel debe tener las columnas: {list(columnas_requeridas)}")
 
     conexion = obtener_conexion()
     if not conexion:
-        return render_template('subir_excel.html', mensaje="❌ Error de conexión con la Base de Datos.")
+        return render_template('subir_excel.html', mensaje=" Error de conexión con la Base de Datos.")
     
     cursor = conexion.cursor()
     registros_nuevos = 0
@@ -146,8 +181,8 @@ def vista_subir_excel():
     cursor.close()
     conexion.close()
 
-    mensaje_exito = f"✅ ¡Importación web exitosa! Alumnos nuevos: {registros_nuevos}, Nuevas inscripciones: {inscripciones_nuevas}"
+    mensaje_exito = f" ¡Importación web exitosa! Alumnos nuevos: {registros_nuevos}, Nuevas inscripciones: {inscripciones_nuevas}"
     return render_template('subir_excel.html', mensaje=mensaje_exito)
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+    app.run(host='0.0.0.0', port=5000, debug=True)
