@@ -4,27 +4,43 @@
     <meta charset="UTF-8">
     <title>Panel del Coordinador - UTE</title>
     <style>
-        body { font-family: Arial, sans-serif; background-color: #f4f6f9; margin: 0; padding: 40px; }
-        .container { max-width: 600px; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); margin: auto; }
-        h2 { color: #2c3e50; }
-        .btn-excel { display: inline-block; background: #e67e22; color: white; padding: 12px 20px; text-decoration: none; border-radius: 4px; font-weight: bold; margin-top: 15px; }
+        body { font-family: Arial, sans-serif; background-color: #f4f6f9; margin: 0; padding: 40px; display: flex; justify-content: center; align-items: center; min-height: 80vh; }
+        .container { max-width: 600px; width: 100%; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        h2 { color: #2c3e50; margin-top: 0; }
+        h3 { color: #34495e; font-size: 18px; margin-bottom: 8px; }
+        p { color: #555; font-size: 14px; margin-bottom: 15px; }
+        .btn { display: inline-block; background: #3498db; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px; font-weight: bold; }
+        .btn:hover { background: #2980b9; }
+        .btn-excel { background: #e67e22; }
         .btn-excel:hover { background: #d35400; }
-        .back { display: inline-block; margin-top: 20px; color: #e74c3c; text-decoration: none; font-weight: bold; }
+        .back { display: inline-block; margin-top: 25px; color: #e74c3c; text-decoration: none; font-weight: bold; }
         .back:hover { text-decoration: underline; }
+        hr { border: 0; border-top: 1px solid #eee; margin: 20px 0; }
+        .error { color: #e74c3c; font-size: 14px; margin-bottom: 15px; }
     </style>
 </head>
 <body>
     <div class="container">
-        <h2>Panel del Coordinador</h2>
-        <p>Bienvenido, <b>{{ nombre }}</b>. Administra los clubs y gestiona las inscripciones de los alumnos.</p>
+        <h2>Panel del Coordinador </h2>
+        <p>Bienvenido, <b>{{ nombre }}</b>. Administra los clubs y gestiona las asistencias.</p>
         
-        <hr style="margin: 20px 0; border: 0; border-top: 1px solid #eee;">
+        {% if error %}
+            <div class="error">{{ error }}</div>
+        {% endif %}
+
+        <hr>
         
+        <h3>Pase de Lista</h3>
+        <p>Inicia la sesión del día generando el código QR para tus alumnos.</p>
+        <a href="/coordinador/generar-qr" class="btn"> Generar Código QR de Asistencia</a>
+
+        <hr>
+
         <h3>Gestión de Alumnos</h3>
-        <p>¿Necesitas registrar a los alumnos inscritos mediante el formulario institucional?</p>
-        <a href="/coordinador/subir-excel" class="btn-excel">Subir y procesar archivo Excel</a>
+        <p>¿Necesitas registrar a los alumnos inscritos mediante el archivo de Excel?</p>
+        <a href="/coordinador/subir-excel" class="btn btn-excel"> Subir y procesar archivo Excel</a>
         
-        <br><br>
+        <br>
         <a href="/logout" class="back">Cerrar Sesión</a>
     </div>
 </body>
