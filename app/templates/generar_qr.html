@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Generar QR de Asistencia - UTE</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f4f6f9; margin: 0; padding: 40px; text-align: center; }
+        .container { max-width: 500px; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); margin: auto; }
+        h2 { color: #2c3e50; }
+        .qr-img { margin: 20px 0; width: 250px; height: 250px; border: 4px solid #f4f6f9; border-radius: 8px; }
+        .info { background: #e8f8f5; color: #117a65; padding: 10px; border-radius: 4px; margin-bottom: 15px; font-size: 14px; }
+        .back { display: inline-block; margin-top: 20px; color: #3498db; text-decoration: none; font-weight: bold; }
+        .back:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Código QR de Asistencia</h2>
+        <div class="info">
+            Club: <b>{{ club.nombre_club }}</b><br>
+            Fecha de sesión: <b>{{ fecha }}</b>
+        </div>
+        
+        <p>Proyecta este código en pantalla para que los alumnos puedan escanearlo:</p>
+        
+        <div>
+            <!-- Mostramos la imagen QR generada dinámicamente en Base64 -->
+            <img src="data:image/png;base64,{{ qr_base64 }}" alt="QR Asistencia" class="qr-img">
+        </div>
+
+        <a href="/coordinador" class="back">← Volver al Panel del Coordinador</a>
+    </div>
+</body>
+</html>
