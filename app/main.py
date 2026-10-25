@@ -8,6 +8,7 @@ import qrcode
 import io
 import base64
 from datetime import date
+from flask import jsonify
 
 load_dotenv()
 
@@ -84,6 +85,59 @@ def panel_alumno():
     if 'matricula' not in session:
         return redirect(url_for('index'))  # ¡Bloquea el acceso directo si no hay sesión de alumno!
     return render_template('panel_alumno.html', nombre=session.get('nombre'))
+
+@app.route('/alumno/escanear', methods=['POST'])
+def registrar_asistencia():
+    """Recibe el código QR escaneado, valida la inscripción y guarda la asistencia."""
+    if 'matricula' not in session:
+        return jsonify({'status': 'error', 'message': 'No hay sesión activa.'}), 401
+    
+    matricula_alumno = session['matricula']
+    datos_json = request.get_json()
+    qr_data = datos_json.get('qr_data', '')
+    
+    # El formato que definimos al generar el QR es: UTE_CLUB_{id_club}_DATE_{hoy}
+    try:
+        partes = qr_data.split('_')
+        id_club_qr = int(partes[2])
+        fecha_qr = partes[4]
+    except (IndexError, ValueError):
+        return jsonify({'status': 'error', 'message': 'Código QR inválido o desconocido.'}), 400
+    
+    conexion = obtener_conexion()
+    if not conexion:
+        return jsonify({'status': 'error', 'message': 'Error de conexión con la Base de Datos.'}), 500
+    
+    cursor = conexion.cursor(dictionary=True, buffered=True)
+    
+    # 1. Validar que el alumno esté inscrito en este club
+    cursor.execute("SELECT * FROM Inscripciones WHERE matricula_alumno = %s AND id_club = %s", 
+                   (matricula_alumno, id_club_qr))
+    inscripcion = cursor.fetchone()
+    
+    if not inscripcion:
+        cursor.close()
+        conexion.close()
+        return jsonify({'status': 'error', 'message': 'No estás inscrito en este club.'}), 403
+    
+    # 2. Validar si ya registró asistencia el día de hoy para este club
+    cursor.execute("SELECT * FROM Asistencias WHERE matricula_alumno = %s AND id_club = %s AND fecha = %s", 
+                   (matricula_alumno, id_club_qr, fecha_qr))
+    asistencia_previa = cursor.fetchone()
+    
+    if asistencia_previa:
+        cursor.close()
+        conexion.close()
+        return jsonify({'status': 'error', 'message': 'Ya habías registrado tu asistencia el día de hoy.'}), 400
+    
+    # 3. Registrar la asistencia en la base de datos
+    cursor.execute("INSERT INTO Asistencias (matricula_alumno, id_club, fecha) VALUES (%s, %s, %s)", 
+                   (matricula_alumno, id_club_qr, fecha_qr))
+    conexion.commit()
+    cursor.close()
+    conexion.close()
+    
+    return jsonify({'status': 'success', 'message': '¡Asistencia registrada correctamente!'})
 
 @app.route('/coordinador')
 def panel_coordinador():
