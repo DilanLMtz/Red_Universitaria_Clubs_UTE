@@ -7,17 +7,18 @@
         body { font-family: Arial, sans-serif; background-color: #f4f6f9; margin: 0; padding: 40px; }
         .container { max-width: 600px; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); margin: auto; }
         h2 { color: #2c3e50; }
-        .back { display: inline-block; margin-top: 20px; color: #3498db; text-decoration: none; }
+        .back { display: inline-block; margin-top: 20px; color: #e74c3c; text-decoration: none; font-weight: bold; }
+        .back:hover { text-decoration: underline; }
     </style>
 </head>
 <body>
     <div class="container">
         <h2>Panel del Alumno </h2>
-        <p>Bienvenido. Aquí podrás consultar tus clubs inscritos y escanear el código QR para tu pase de asistencia.</p>
+        <p>Bienvenido, <b>{{ nombre }}</b>. Aquí podrás consultar tus clubs inscritos y escanear el código QR para tu pase de asistencia.</p>
         <hr>
         <p><i>[Próximamente: Lector de QR con la cámara y lista de asistencia]</i></p>
         
-        <a href="/" class="back">← Regresar al inicio</a>
+        <a href="/logout" class="back">Cerrar Sesión</a>
     </div>
 </body>
 </html>
