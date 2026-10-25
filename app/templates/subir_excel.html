@@ -12,6 +12,8 @@
         button { background: #27ae60; color: white; border: none; padding: 10px 20px; font-size: 16px; border-radius: 4px; cursor: pointer; width: 100%; }
         button:hover { background: #219653; }
         .mensaje { margin-top: 15px; padding: 10px; background: #e8f8f5; border-left: 4px solid #27ae60; color: #117a65; }
+        .back { display: inline-block; margin-top: 20px; color: #3498db; text-decoration: none; }
+        .back:hover { text-decoration: underline; }
     </style>
 </head>
 <body>
@@ -27,6 +29,9 @@
         {% if mensaje %}
             <div class="mensaje">{{ mensaje }}</div>
         {% endif %}
+
+        <br>
+        <a href="/coordinador" class="back">← Volver al Panel del Coordinador</a>
     </div>
 </body>
 </html>
