@@ -3,10 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <title>Panel del Alumno - UTE</title>
+    <!-- Librería html5-qrcode desde CDN -->
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
     <style>
-        body { font-family: Arial, sans-serif; background-color: #f4f6f9; margin: 0; padding: 40px; }
-        .container { max-width: 600px; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); margin: auto; }
-        h2 { color: #2c3e50; }
+        body { font-family: Arial, sans-serif; background-color: #f4f6f9; margin: 0; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 80vh; }
+        .container { max-width: 500px; width: 100%; background: white; padding: 25px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); text-align: center; }
+        h2 { color: #2c3e50; margin-top: 0; }
+        p { color: #555; font-size: 14px; }
+        #reader { width: 100%; max-width: 400px; margin: 20px auto; border-radius: 8px; overflow: hidden; }
+        .mensaje { margin-top: 15px; padding: 12px; border-radius: 4px; font-weight: bold; font-size: 14px; display: none; }
+        .exito { background: #e8f8f5; color: #117a65; border: 1px solid #a3e4d7; }
+        .error { background: #f9ebea; color: #922b21; border: 1px solid #f5b7b1; }
         .back { display: inline-block; margin-top: 20px; color: #e74c3c; text-decoration: none; font-weight: bold; }
         .back:hover { text-decoration: underline; }
     </style>
@@ -14,11 +21,21 @@
 <body>
     <div class="container">
         <h2>Panel del Alumno </h2>
-        <p>Bienvenido, <b>{{ nombre }}</b>. Aquí podrás consultar tus clubs inscritos y escanear el código QR para tu pase de asistencia.</p>
-        <hr>
-        <p><i>[Próximamente: Lector de QR con la cámara y lista de asistencia]</i></p>
+        <p>Bienvenido, <b>{{ nombre }}</b>. Escanea el código QR que proyecta tu coordinador para registrar tu asistencia.</p>
         
+        <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
+
+        <!-- Contenedor de la cámara -->
+        <div id="reader"></div>
+
+        <!-- Cuadro de mensajes dinámicos -->
+        <div id="resultadoMensaje" class="mensaje"></div>
+
+        <br>
         <a href="/logout" class="back">Cerrar Sesión</a>
     </div>
+
+    <!-- Script de JavaScript vinculado mediante url_for de Flask -->
+    <script src="{{ url_for('static', filename='js/escaner.js') }}"></script>
 </body>
 </html>
