@@ -83,9 +83,36 @@ def logout():
 
 @app.route('/alumno')
 def panel_alumno():
-    if 'matricula' not in session:
-        return redirect(url_for('index'))  # ¡Bloquea el acceso directo si no hay sesión de alumno!
-    return render_template('panel_alumno.html', nombre=session.get('nombre'))
+    if 'matricula' not in session:  # O la variable de sesión que utilices para el alumno
+        return redirect(url_for('index'))
+    
+    matricula_alumno = session['matricula']
+    conexion = obtener_conexion()
+    if not conexion:
+        return "Error de base de datos", 500
+        
+    cursor = conexion.cursor(dictionary=True, buffered=True)
+    
+    # Obtener el nombre del alumno
+    cursor.execute("SELECT nombre_completo FROM Alumnos WHERE matricula = %s", (matricula_alumno,))
+    alumno = cursor.fetchone()
+    
+    # Verificar si está inscrito en algún club
+    cursor.execute("""
+        SELECT c.nombre_club 
+        FROM Inscripciones i 
+        JOIN Clubs c ON i.id_club = c.id_club 
+        WHERE i.matricula_alumno = %s
+    """, (matricula_alumno,))
+    inscripcion = cursor.fetchone()
+    
+    cursor.close()
+    conexion.close()
+    
+    nombre = alumno['nombre_completo'] if alumno else "Alumno"
+    tiene_club = True if inscripcion else False
+    
+    return render_template('panel_alumno.html', nombre=nombre, tiene_club=tiene_club)
 
 @app.route('/alumno/escanear', methods=['POST'])
 def registrar_asistencia():
@@ -265,6 +292,34 @@ def exportar_excel(fecha):
                      mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
                      as_attachment=True, 
                      download_name=nombre_archivo)
+
+@app.route('/coordinador/baja-alumno/<matricula>')
+def baja_alumno(matricula):
+    """Da de baja a un alumno del club del coordinador actual eliminando su inscripción."""
+    if 'id_usuario' not in session:
+        return redirect(url_for('index'))
+    
+    id_usuario = session['id_usuario']
+    conexion = obtener_conexion()
+    if not conexion:
+        return "Error de base de datos", 500
+        
+    cursor = conexion.cursor(dictionary=True, buffered=True)
+    
+    # Obtener el club que administra este coordinador
+    cursor.execute("SELECT id_club FROM Clubs WHERE id_coordinador = %s", (id_usuario,))
+    club = cursor.fetchone()
+    
+    if club:
+        id_club = club['id_club']
+        # Eliminar únicamente la inscripción (el alumno sigue existiendo en la tabla Alumnos)
+        cursor.execute("DELETE FROM Inscripciones WHERE matricula_alumno = %s AND id_club = %s", (matricula, id_club))
+        conexion.commit()
+        
+    cursor.close()
+    conexion.close()
+    
+    return redirect(url_for('ver_asistencias'))
 
 @app.route('/coordinador/generar-qr')
 def generar_qr():
