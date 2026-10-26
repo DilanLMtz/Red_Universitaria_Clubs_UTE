@@ -18,18 +18,25 @@
         .back:hover { text-decoration: underline; }
     </style>
 </head>
-<body>
-    <div class="container">
+<body><div class="container">
         <h2>Panel del Alumno </h2>
-        <p>Bienvenido, <b>{{ nombre }}</b>. Escanea el código QR que proyecta tu coordinador para registrar tu asistencia.</p>
+        <p>Bienvenido, <b>{{ nombre }}</b>.</p>
         
         <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
 
-        <!-- Contenedor de la cámara -->
-        <div id="reader"></div>
-
-        <!-- Cuadro de mensajes dinámicos -->
-        <div id="resultadoMensaje" class="mensaje"></div>
+        {% if tiene_club %}
+            <!-- Si pertenece a un club, muestra el escáner normalmente -->
+            <p>Escanea el código QR que proyecta tu coordinador para registrar tu asistencia.</p>
+            <div id="reader"></div>
+            <div id="resultadoMensaje" class="mensaje"></div>
+            <script src="{{ url_for('static', filename='js/escaner.js') }}"></script>
+        {% else %}
+            <!-- Si fue dado de baja o no tiene club -->
+            <div style="background: #f9ebea; color: #922b21; padding: 20px; border-radius: 6px; border: 1px solid #f5b7b1; margin: 20px 0;">
+                <p style="font-size: 16px; margin: 0; font-weight: bold;">Lo sentimos, no perteneces por ahora a ningún club.</p>
+            </div>
+            <p style="color: #666; font-size: 13px;">Si consideras que esto es un error, por favor acércate con el administrador o coordinador escolar.</p>
+        {% endif %}
 
         <br>
         <a href="/logout" class="back">Cerrar Sesión</a>
