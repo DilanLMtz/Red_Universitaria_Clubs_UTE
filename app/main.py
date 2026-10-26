@@ -293,6 +293,58 @@ def exportar_excel(fecha):
                      as_attachment=True, 
                      download_name=nombre_archivo)
 
+@app.route('/coordinador/inscribir-alumno', methods=['POST'])
+def inscribir_alumno():
+    """Inscribe, cambia de club o crea cuenta y añade a un alumno al club del coordinador."""
+    if 'id_usuario' not in session:
+        return redirect(url_for('index'))
+    
+    matricula = request.form.get('matricula').strip()
+    nombre = request.form.get('nombre').strip()
+    
+    id_usuario = session['id_usuario']
+    conexion = obtener_conexion()
+    if not conexion:
+        return redirect(url_for('ver_asistencias'))
+        
+    cursor = conexion.cursor(dictionary=True, buffered=True)
+    cursor.execute("SELECT id_club FROM Clubs WHERE id_coordinador = %s", (id_usuario,))
+    club = cursor.fetchone()
+    
+    if not club:
+        cursor.close()
+        conexion.close()
+        return redirect(url_for('ver_asistencias'))
+        
+    id_club = club['id_club']
+    
+    # 1. Verificar si el alumno ya existe en la tabla Alumnos
+    cursor.execute("SELECT * FROM Alumnos WHERE matricula = %s", (matricula,))
+    alumno = cursor.fetchone()
+    
+    if not alumno:
+        # Si no existe, creamos su cuenta automáticamente (contraseña por defecto = su misma matrícula)
+        cursor.execute("INSERT INTO Alumnos (matricula, nombre_completo, contrasena) VALUES (%s, %s, %s)",
+                       (matricula, nombre, matricula))
+        conexion.commit()
+        
+    # 2. Verificar si el alumno ya tiene alguna inscripción previa (para manejar cambios de club)
+    cursor.execute("SELECT * FROM Inscripciones WHERE matricula_alumno = %s", (matricula,))
+    inscripcion_previa = cursor.fetchone()
+    
+    if inscripcion_previa:
+        # Si ya estaba en otro club, actualizamos su club (Cambio de club)
+        cursor.execute("UPDATE Inscripciones SET id_club = %s WHERE matricula_alumno = %s", (id_club, matricula))
+    else:
+        # Si no tenía club, creamos su inscripción nueva
+        cursor.execute("INSERT INTO Inscripciones (matricula_alumno, id_club) VALUES (%s, %s)", (matricula, id_club))
+        
+    conexion.commit()
+    cursor.close()
+    conexion.close()
+    
+    return redirect(url_for('ver_asistencias'))
+
 @app.route('/coordinador/baja-alumno/<matricula>')
 def baja_alumno(matricula):
     """Da de baja a un alumno del club del coordinador actual eliminando su inscripción."""
