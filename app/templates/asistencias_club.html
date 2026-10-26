@@ -46,6 +46,7 @@
                     <th>Matrícula</th>
                     <th>Nombre del Alumno</th>
                     <th style="text-align: center;">Asistencia</th>
+                    <th style="text-align: center;">Acciones</th>
                 </tr>
             </thead>
             <tbody>
@@ -60,15 +61,22 @@
                             <span class="status-no" title="Faltó">❌</span>
                         {% endif %}
                     </td>
+                    <td style="text-align: center;">
+                        <a href="/coordinador/baja-alumno/{{ alumno.matricula }}" 
+                           class="btn" 
+                           style="background: #e74c3c; padding: 5px 10px; font-size: 12px;"
+                           onclick="return confirm('¿Estás seguro de dar de baja a este alumno del club?');">
+                            Dar de baja
+                        </a>
+                    </td>
                 </tr>
                 {% else %}
                 <tr>
-                    <td colspan="3" style="text-align: center; color: #777;">No hay alumnos inscritos en este club todavía.</td>
+                    <td colspan="4" style="text-align: center; color: #777;">No hay alumnos inscritos en este club todavía.</td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
-        <a href="/coordinador" class="back">← Volver al Panel del Coordinador</a>
     </div>
 </body>
 </html>
