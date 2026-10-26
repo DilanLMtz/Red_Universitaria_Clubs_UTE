@@ -77,6 +77,13 @@
                 {% endfor %}
             </tbody>
         </table>
+    <!-- Formulario para agregar / cambiar alumno al club -->
+        <h4 style="margin-top: 0; color: #2c3e50;">Inscribir o Cambiar Alumno de Club</h4>
+            <form action="/coordinador/inscribir-alumno" method="POST" style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <input type="text" name="matricula" placeholder="Matrícula (Ej. A0123456)" required style="padding: 8px; flex: 1; border: 1px solid #ccc; border-radius: 4px;">
+                <input type="text" name="nombre" placeholder="Nombre completo (Solo si es nuevo alumno)" style="padding: 8px; flex: 2; border: 1px solid #ccc; border-radius: 4px;">
+                <button type="submit" class="btn" style="background: #27ae60;">Inscribir / Asignar</button>
+            </form>
     </div>
 </body>
 </html>
