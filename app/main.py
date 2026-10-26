@@ -9,6 +9,7 @@ import io
 import base64
 from datetime import date
 from flask import jsonify
+from flask import send_file
 
 load_dotenv()
 
@@ -121,8 +122,8 @@ def registrar_asistencia():
         return jsonify({'status': 'error', 'message': 'No estás inscrito en este club.'}), 403
     
     # 2. Validar si ya registró asistencia el día de hoy para este club
-    cursor.execute("SELECT * FROM Asistencias WHERE matricula_alumno = %s AND id_club = %s AND fecha = %s", 
-                   (matricula_alumno, id_club_qr, fecha_qr))
+    cursor.execute("SELECT * FROM Asistencias WHERE matricula_alumno = %s AND id_club = %s AND DATE(fecha_hora) = %s", 
+               (matricula_alumno, id_club_qr, fecha_qr))
     asistencia_previa = cursor.fetchone()
     
     if asistencia_previa:
@@ -131,8 +132,8 @@ def registrar_asistencia():
         return jsonify({'status': 'error', 'message': 'Ya habías registrado tu asistencia el día de hoy.'}), 400
     
     # 3. Registrar la asistencia en la base de datos
-    cursor.execute("INSERT INTO Asistencias (matricula_alumno, id_club, fecha) VALUES (%s, %s, %s)", 
-                   (matricula_alumno, id_club_qr, fecha_qr))
+    cursor.execute("INSERT INTO Asistencias (matricula_alumno, id_club, fecha_hora) VALUES (%s, %s, NOW())", 
+               (matricula_alumno, id_club_qr))
     conexion.commit()
     cursor.close()
     conexion.close()
@@ -144,6 +145,126 @@ def panel_coordinador():
     if 'id_usuario' not in session:
         return redirect(url_for('index'))  # ¡Bloquea el acceso directo si no hay sesión de coordinador!
     return render_template('panel_coordinador.html', nombre=session.get('nombre'))
+
+@app.route('/coordinador/asistencias')
+def ver_asistencias():
+    """Muestra la lista de alumnos del club y su estatus de asistencia según la fecha seleccionada."""
+    if 'id_usuario' not in session:
+        return redirect(url_for('index'))
+    
+    id_usuario = session['id_usuario']
+    conexion = obtener_conexion()
+    if not conexion:
+        return render_template('panel_coordinador.html', error="Error de base de datos.")
+    
+    cursor = conexion.cursor(dictionary=True, buffered=True)
+    cursor.execute("SELECT id_club, nombre_club FROM Clubs WHERE id_coordinador = %s", (id_usuario,))
+    club = cursor.fetchone()
+    
+    if not club:
+        cursor.close()
+        conexion.close()
+        return render_template('panel_coordinador.html', error="No tienes ningún club asignado.")
+    
+    id_club = club['id_club']
+    
+    # Extraemos las fechas únicas usando DATE() de fecha_hora para el historial tipo calendario
+    cursor.execute("SELECT DISTINCT DATE(fecha_hora) AS fecha FROM Asistencias WHERE id_club = %s ORDER BY fecha DESC", (id_club,))
+    fechas_registradas = [str(row['fecha']) for row in cursor.fetchall() if row['fecha']]
+    
+    fecha_seleccionada = request.args.get('fecha', date.today().isoformat())
+    
+    # Obtener la lista completa de alumnos inscritos
+    cursor.execute("""
+        SELECT a.matricula, a.nombre_completo AS nombre 
+        FROM Alumnos a 
+        JOIN Inscripciones i ON a.matricula = i.matricula_alumno 
+        WHERE i.id_club = %s
+    """, (id_club,))
+    alumnos = cursor.fetchall()
+    
+    cursor.execute("SELECT matricula_alumno FROM Asistencias WHERE id_club = %s AND DATE(fecha_hora) = %s", (id_club, fecha_seleccionada))
+    asistencias_dia = {row['matricula_alumno'] for row in cursor.fetchall()}
+    
+    cursor.close()
+    conexion.close()
+    
+    lista_asistencia = []
+    for alumno in alumnos:
+        asistio = alumno['matricula'] in asistencias_dia
+        lista_asistencia.append({
+            'matricula': alumno['matricula'],
+            'nombre': alumno['nombre'],
+            'asistio': asistio
+        })
+        
+    return render_template('asistencias_club.html', 
+                           club=club, 
+                           lista_asistencia=lista_asistencia, 
+                           fechas=fechas_registradas, 
+                           fecha_seleccionada=fecha_seleccionada)
+
+
+@app.route('/coordinador/exportar-excel/<fecha>')
+def exportar_excel(fecha):
+    """Genera y descarga un archivo de Excel con el reporte de asistencia de una fecha específica."""
+    if 'id_usuario' not in session:
+        return redirect(url_for('index'))
+    
+    id_usuario = session['id_usuario']
+    conexion = obtener_conexion()
+    if not conexion:
+        return "Error de base de datos", 500
+        
+    cursor = conexion.cursor(dictionary=True, buffered=True)
+    cursor.execute("SELECT id_club, nombre_club FROM Clubs WHERE id_coordinador = %s", (id_usuario,))
+    club = cursor.fetchone()
+    
+    if not club:
+        cursor.close()
+        conexion.close()
+        return "Club no encontrado", 404
+        
+    id_club = club['id_club']
+    
+    # Consulta corregida utilizando nombre_completo
+    cursor.execute("""
+        SELECT a.matricula, a.nombre_completo AS nombre 
+        FROM Alumnos a 
+        JOIN Inscripciones i ON a.matricula = i.matricula_alumno 
+        WHERE i.id_club = %s
+    """, (id_club,))
+    alumnos = cursor.fetchall()
+    
+    cursor.execute("SELECT matricula_alumno FROM Asistencias WHERE id_club = %s AND DATE(fecha_hora) = %s", (id_club, fecha))
+    asistencias_dia = {row['matricula_alumno'] for row in cursor.fetchall()}
+    
+    cursor.close()
+    conexion.close()
+    
+    datos_excel = []
+    for alumno in alumnos:
+        estado = "Asistió" if alumno['matricula'] in asistencias_dia else "Faltó"
+        datos_excel.append({
+            'Matrícula': alumno['matricula'],
+            'Nombre del Alumno': alumno['nombre'],
+            'Fecha de Sesión': fecha,
+            'Asistencia': estado
+        })
+        
+    df = pd.DataFrame(datos_excel)
+    
+    output = io.BytesIO()
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        df.to_excel(writer, index=False, sheet_name='Reporte Asistencia')
+    output.seek(0)
+    
+    nombre_archivo = f"Asistencia_{club['nombre_club'].replace(' ', '_')}_{fecha}.xlsx"
+    
+    return send_file(output, 
+                     mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                     as_attachment=True, 
+                     download_name=nombre_archivo)
 
 @app.route('/coordinador/generar-qr')
 def generar_qr():
