@@ -32,7 +32,8 @@ CREATE TABLE Horarios (
 CREATE TABLE Alumnos (
     matricula VARCHAR(20) PRIMARY KEY,
     nombre_completo VARCHAR(100) NOT NULL,
-    contrasena VARCHAR(255) NOT NULL -- contraseña generada
+    contrasena VARCHAR(255) NOT NULL, -- contraseña generada
+    carrera VARCHAR(100)
 );
 
 -- Tabla puente: Qué alumno está en qué club (Se llena también con el Excel)
