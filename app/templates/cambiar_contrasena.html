@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Cambiar Contraseña - UTE</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f4f6f9; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .card { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 100%; max-width: 400px; text-align: center; }
+        input { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        .btn { background: #3498db; color: white; border: none; padding: 10px; width: 100%; border-radius: 4px; font-weight: bold; cursor: pointer; }
+        .btn:hover { background: #2980b9; }
+        .back { display: block; margin-top: 15px; color: #666; text-decoration: none; font-size: 14px; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h2> Cambiar Contraseña</h2>
+        <form method="POST">
+            <input type="password" name="nueva_password" placeholder="Escribe tu nueva contraseña" required>
+            <button type="submit" class="btn">Actualizar Contraseña</button>
+        </form>
+        <a href="javascript:history.back()" class="back">← Volver atrás</a>
+    </div>
+</body>
+</html>
