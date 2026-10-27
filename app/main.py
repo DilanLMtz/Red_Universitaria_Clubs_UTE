@@ -107,7 +107,7 @@ def cambiar_contrasena():
 
 @app.route('/alumno')
 def panel_alumno():
-    if 'matricula' not in session:  # O la variable de sesión que utilices para el alumno
+    if 'matricula' not in session:
         return redirect(url_for('index'))
     
     matricula_alumno = session['matricula']
@@ -117,26 +117,27 @@ def panel_alumno():
         
     cursor = conexion.cursor(dictionary=True, buffered=True)
     
-    # Obtener el nombre del alumno
-    cursor.execute("SELECT nombre_completo FROM Alumnos WHERE matricula = %s", (matricula_alumno,))
+    # Obtener nombre y carrera del alumno
+    cursor.execute("SELECT nombre_completo, carrera FROM Alumnos WHERE matricula = %s", (matricula_alumno,))
     alumno = cursor.fetchone()
     
-    # Verificar si está inscrito en algún club
+    # Obtener el club y sus múltiples horarios usando la tabla 'horarios'
     cursor.execute("""
-        SELECT c.nombre_club 
+        SELECT c.nombre_club, h.dia_semana, h.hora_inicio, h.hora_fin, h.lugar 
         FROM Inscripciones i 
         JOIN Clubs c ON i.id_club = c.id_club 
+        LEFT JOIN horarios h ON c.id_club = h.id_club 
         WHERE i.matricula_alumno = %s
     """, (matricula_alumno,))
-    inscripcion = cursor.fetchone()
+    horarios_club = cursor.fetchall()
     
     cursor.close()
     conexion.close()
     
     nombre = alumno['nombre_completo'] if alumno else "Alumno"
-    tiene_club = True if inscripcion else False
+    carrera = alumno['carrera'] if alumno and alumno['carrera'] else "No especificada"
     
-    return render_template('panel_alumno.html', nombre=nombre, tiene_club=tiene_club)
+    return render_template('panel_alumno.html', nombre=nombre, carrera=carrera, horarios_club=horarios_club)
 
 @app.route('/alumno/escanear', methods=['POST'])
 def registrar_asistencia():
