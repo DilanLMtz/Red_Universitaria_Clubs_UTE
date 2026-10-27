@@ -3,48 +3,72 @@
 <head>
     <meta charset="UTF-8">
     <title>Panel del Alumno - UTE</title>
-    <!-- Librería html5-qrcode desde CDN -->
+    <!-- Librería de escaneo QR -->
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
     <style>
-        body { font-family: Arial, sans-serif; background-color: #f4f6f9; margin: 0; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 80vh; }
-        .container { max-width: 500px; width: 100%; background: white; padding: 25px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); text-align: center; }
+        body { font-family: Arial, sans-serif; background-color: #f4f6f9; margin: 0; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+        .container { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); width: 100%; max-width: 500px; }
         h2 { color: #2c3e50; margin-top: 0; }
-        p { color: #555; font-size: 14px; }
-        #reader { width: 100%; max-width: 400px; margin: 20px auto; border-radius: 8px; overflow: hidden; }
-        .mensaje { margin-top: 15px; padding: 12px; border-radius: 4px; font-weight: bold; font-size: 14px; display: none; }
-        .exito { background: #e8f8f5; color: #117a65; border: 1px solid #a3e4d7; }
-        .error { background: #f9ebea; color: #922b21; border: 1px solid #f5b7b1; }
-        .back { display: inline-block; margin-top: 20px; color: #e74c3c; text-decoration: none; font-weight: bold; }
-        .back:hover { text-decoration: underline; }
+        .info-box { background: #f8f9fa; border-left: 4px solid #3498db; padding: 12px 15px; margin-bottom: 20px; border-radius: 4px; font-size: 14px; color: #555; }
+        .club-card { background: #e8f8f5; border: 1px solid #a3e4d7; padding: 15px; border-radius: 6px; margin-bottom: 20px; }
+        .club-card h3 { color: #117a65; margin-top: 0; margin-bottom: 8px; }
+        .mensaje { margin-top: 15px; padding: 10px; border-radius: 4px; text-align: center; font-weight: bold; }
+        #reader { width: 100%; border-radius: 4px; overflow: hidden; }
+        .btn { display: inline-block; background: #e67e22; color: white; padding: 8px 14px; border-radius: 4px; text-decoration: none; font-size: 14px; font-weight: bold; margin-top: 10px; }
+        .btn:hover { background: #d35400; }
+        .logout { display: block; text-align: center; margin-top: 20px; color: #e74c3c; text-decoration: none; font-size: 14px; }
+        .logout:hover { text-decoration: underline; }
     </style>
 </head>
-<body><div class="container">
+<body>
+    <div class="container">
         <h2>Panel del Alumno </h2>
-        <p>Bienvenido, <b>{{ nombre }}</b>.</p>
         
-        <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
+        <!-- Datos generales del alumno -->
+        <div class="info-box">
+            <p style="margin: 0 0 5px 0;"><b>Alumno:</b> {{ nombre }}</p>
+            <p style="margin: 0;"><b>Carrera:</b> {{ carrera }}</p>
+        </div>
 
-        {% if tiene_club %}
-            <!-- Si pertenece a un club, muestra el escáner normalmente -->
-            <p>Escanea el código QR que proyecta tu coordinador para registrar tu asistencia.</p>
+        {% if horarios_club and horarios_club[0].nombre_club %}
+            <!-- Tarjeta con la información del club y sus horarios -->
+            <div class="club-card">
+                <h3>Club Asignado: {{ horarios_club[0].nombre_club }}</h3>
+                <hr style="border: 0; border-top: 1px solid #a3e4d7; margin: 10px 0;">
+                <p style="margin: 5px 0; color: #2c3e50; font-weight: bold; font-size: 13px;">Horarios y Ubicaciones:</p>
+                <ul style="padding-left: 18px; margin: 5px 0; color: #333; font-size: 13px;">
+                    {% for h in horarios_club %}
+                        {% if h.dia_semana %}
+                            <li style="margin-bottom: 4px;">
+                                <b>{{ h.dia_semana }}:</b> {{ h.hora_inicio }} - {{ h.hora_fin }} <br>
+                                <span style="color: #117a65;"> {{ h.lugar }}</span>
+                            </li>
+                        {% else %}
+                            <li><em>Horario por definir por el coordinador</em></li>
+                        {% endif %}
+                    {% endfor %}
+                </ul>
+            </div>
+
+            <p style="font-size: 14px; color: #666; text-align: center;">Escanea el código QR proyectado por tu coordinador para registrar tu asistencia:</p>
+            
             <div id="reader"></div>
-            <div id="resultadoMensaje" class="mensaje"></div>
+            <div id="resultadoMensaje"></div>
+            
             <script src="{{ url_for('static', filename='js/escaner.js') }}"></script>
         {% else %}
-            <!-- Si fue dado de baja o no tiene club -->
-            <div style="background: #f9ebea; color: #922b21; padding: 20px; border-radius: 6px; border: 1px solid #f5b7b1; margin: 20px 0;">
-                <p style="font-size: 16px; margin: 0; font-weight: bold;">Lo sentimos, no perteneces por ahora a ningún club.</p>
+            <!-- Mensaje si no tiene club asignado -->
+            <div style="background: #f9ebea; color: #922b21; padding: 20px; border-radius: 6px; border: 1px solid #f5b7b1; margin: 20px 0; text-align: center;">
+                <p style="font-size: 15px; margin: 0; font-weight: bold;">Lo sentimos, no perteneces por ahora a ningún club.</p>
             </div>
-            <p style="color: #666; font-size: 13px;">Si consideras que esto es un error, por favor acércate con el administrador o coordinador escolar.</p>
+            <p style="color: #666; font-size: 13px; text-align: center;">Si esto es un error, acércate con tu coordinador escolar para que te inscriba.</p>
         {% endif %}
 
-        <br>
-        <a href="/logout" class="back">Cerrar Sesión</a>
-        <br>
-        <a href="/cambiar-contrasena" class="back">Cambiar Contraseña</a>
-    </div>
+        <div style="text-align: center;">
+            <a href="/cambiar-contrasena" class="btn">Cambiar Contraseña</a>
+        </div>
 
-    <!-- Script de JavaScript vinculado mediante url_for de Flask -->
-    <script src="{{ url_for('static', filename='js/escaner.js') }}"></script>
+        <a href="/logout" class="logout">Cerrar Sesión</a>
+    </div>
 </body>
 </html>
