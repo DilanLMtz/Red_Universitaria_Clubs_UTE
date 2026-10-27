@@ -45,6 +45,7 @@
                 <tr>
                     <th>Matrícula</th>
                     <th>Nombre del Alumno</th>
+                    <th style="text-align: center;">Carrera</th>
                     <th style="text-align: center;">Asistencia</th>
                     <th style="text-align: center;">Acciones</th>
                 </tr>
@@ -54,6 +55,7 @@
                 <tr>
                     <td>{{ alumno.matricula }}</td>
                     <td>{{ alumno.nombre }}</td>
+                    <td>{{ alumno.carrera }}</td>
                     <td style="text-align: center;">
                         {% if alumno.asistio %}
                             <span class="status-yes" title="Asistió">✅</span>
@@ -78,12 +80,15 @@
             </tbody>
         </table>
     <!-- Formulario para agregar / cambiar alumno al club -->
-        <h4 style="margin-top: 0; color: #2c3e50;">Inscribir o Cambiar Alumno de Club</h4>
+            <h4 style="margin-top: 0; color: #2c3e50;">Inscribir o Cambiar Alumno de Club</h4>
             <form action="/coordinador/inscribir-alumno" method="POST" style="display: flex; gap: 10px; flex-wrap: wrap;">
                 <input type="text" name="matricula" placeholder="Matrícula (Ej. A0123456)" required style="padding: 8px; flex: 1; border: 1px solid #ccc; border-radius: 4px;">
-                <input type="text" name="nombre" placeholder="Nombre completo (Solo si es nuevo alumno)" style="padding: 8px; flex: 2; border: 1px solid #ccc; border-radius: 4px;">
+                <input type="text" name="nombre" placeholder="Nombre completo" required style="padding: 8px; flex: 2; border: 1px solid #ccc; border-radius: 4px;">
+                <input type="text" name="carrera" placeholder="Carrera (Ej. T.I.)" required style="padding: 8px; flex: 1.5; border: 1px solid #ccc; border-radius: 4px;">
                 <button type="submit" class="btn" style="background: #27ae60;">Inscribir / Asignar</button>
             </form>
-    </div>
+        <a href="/coordinador" class="back">← Volver al Panel del Coordinador</a>
+        </div>
+        
 </body>
 </html>
