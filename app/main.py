@@ -10,6 +10,9 @@ import base64
 from datetime import date
 from flask import jsonify
 from flask import send_file
+import json
+from datetime import date
+import os
 
 load_dotenv()
 
@@ -431,8 +434,65 @@ def generar_qr():
     
     return render_template('generar_qr.html', club=club, qr_base64=qr_base64, fecha=hoy)
 
+@app.route('/coordinador/reiniciar-ciclo', methods=['POST'])
+def reiniciar_ciclo():
+    if 'id_usuario' not in session:
+        return redirect(url_for('index'))
+    
+    #  LEER LA FECHA DE INICIO DESDE EL ARCHIVO DE CONFIGURACIÓN
+    if os.path.exists('config_cuatri.json'):
+        with open('config_cuatri.json', 'r') as f:
+            config = json.load(f)
+            fecha_str = config.get("fecha_inicio_cuatri")
+            fecha_inicio_cuatri = date.fromisoformat(fecha_str)
+    else:
+        # Valor de respaldo por si acaso no se ha importado ningún Excel todavía
+        fecha_inicio_cuatri = date.today()
+    
+    # Calcular días transcurridos desde que se importó el Excel
+    dias_transcurridos = (date.today() - fecha_inicio_cuatri).days
+    
+    # Bloqueo de seguridad si no han pasado al menos 100 días
+    if dias_transcurridos < 100:
+        return f"""
+            <script>
+                alert(' Acción bloqueada: El cuatrimestre inició el {fecha_inicio_cuatri} y apenas han pasado {dias_transcurridos} días. El botón se habilitará al cumplirse los 100 días.');
+                window.history.back();
+            </script>
+        """
+    
+    conexion = obtener_conexion()
+    if not conexion:
+        return "Error de base de datos", 500
+        
+    cursor = conexion.cursor()
+    try:
+        # Limpiar inscripciones protegiendo alumnos y asistencias históricas
+        cursor.execute("DELETE FROM Inscripciones")
+        conexion.commit()
+    except Exception as e:
+        conexion.rollback()
+    finally:
+        cursor.close()
+        conexion.close()
+        
+    return """
+        <script>
+            alert(' ¡Ciclo cuatrimestral finalizado con éxito! Las inscripciones se han reiniciado.');
+            window.location.href = '/coordinador/asistencias';
+        </script>
+    """
+
 @app.route('/coordinador/subir-excel', methods=['GET', 'POST'])
 def vista_subir_excel():
+
+    config_data = {
+        "fecha_inicio_cuatri": date.today().isoformat() # Guarda la fecha de hoy (Ej: "2026-10-26")
+    }
+    
+    with open('config_cuatri.json', 'w') as f:
+        json.dump(config_data, f)
+
     if 'id_usuario' not in session:
         return redirect(url_for('index'))  # ¡Bloquea el acceso directo!
     
@@ -484,6 +544,7 @@ def vista_subir_excel():
                 cursor.execute("INSERT INTO Inscripciones (matricula_alumno, id_club) VALUES (%s, %s)", 
                                (matricula, id_club))
                 inscripciones_nuevas += 1
+    
 
     conexion.commit()
     cursor.close()
