@@ -79,7 +79,28 @@ def logout():
     session.clear()
     return redirect(url_for('index'))
 
-# --- RUTAS PROTEGIDAS ('return' obligatorio para bloquear URLs) ---
+@app.route('/cambiar-contrasena', methods=['GET', 'POST'])
+def cambiar_contrasena():
+    if 'id_usuario' not in session and 'matricula' not in session:
+        return redirect(url_for('index'))
+        
+    if request.method == 'POST':
+        nueva_pass = request.form.get('nueva_password')
+        conexion = obtener_conexion()
+        if conexion:
+            cursor = conexion.cursor()
+            if 'id_usuario' in session:
+                # Es coordinador (tabla Usuarios)
+                cursor.execute("UPDATE Usuarios SET contrasena = %s WHERE id_usuario = %s", (nueva_pass, session['id_usuario']))
+            else:
+                # Es alumno (tabla Alumnos)
+                cursor.execute("UPDATE Alumnos SET contrasena = %s WHERE matricula = %s", (nueva_pass, session['matricula']))
+            conexion.commit()
+            cursor.close()
+            conexion.close()
+            return redirect(url_for('panel_coordinador') if 'id_usuario' in session else url_for('panel_alumno'))
+            
+    return render_template('cambiar_contrasena.html')
 
 @app.route('/alumno')
 def panel_alumno():
