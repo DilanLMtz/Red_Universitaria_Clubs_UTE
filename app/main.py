@@ -224,7 +224,7 @@ def ver_asistencias():
     
     # Obtener la lista completa de alumnos inscritos
     cursor.execute("""
-        SELECT a.matricula, a.nombre_completo AS nombre 
+        SELECT a.matricula, a.nombre_completo AS nombre, a.carrera 
         FROM Alumnos a 
         JOIN Inscripciones i ON a.matricula = i.matricula_alumno 
         WHERE i.id_club = %s
@@ -243,6 +243,7 @@ def ver_asistencias():
         lista_asistencia.append({
             'matricula': alumno['matricula'],
             'nombre': alumno['nombre'],
+            'carrera': alumno['carrera'], 
             'asistio': asistio
         })
         
@@ -277,7 +278,7 @@ def exportar_excel(fecha):
     
     # Consulta corregida utilizando nombre_completo
     cursor.execute("""
-        SELECT a.matricula, a.nombre_completo AS nombre 
+        SELECT a.matricula, a.nombre_completo AS nombre, a.carrera 
         FROM Alumnos a 
         JOIN Inscripciones i ON a.matricula = i.matricula_alumno 
         WHERE i.id_club = %s
@@ -296,6 +297,7 @@ def exportar_excel(fecha):
         datos_excel.append({
             'Matrícula': alumno['matricula'],
             'Nombre del Alumno': alumno['nombre'],
+            'Carrera': alumno['carrera'], 
             'Fecha de Sesión': fecha,
             'Asistencia': estado
         })
@@ -316,12 +318,12 @@ def exportar_excel(fecha):
 
 @app.route('/coordinador/inscribir-alumno', methods=['POST'])
 def inscribir_alumno():
-    """Inscribe, cambia de club o crea cuenta y añade a un alumno al club del coordinador."""
     if 'id_usuario' not in session:
         return redirect(url_for('index'))
     
     matricula = request.form.get('matricula').strip()
     nombre = request.form.get('nombre').strip()
+    carrera = request.form.get('carrera').strip() # <-- Nuevo campo
     
     id_usuario = session['id_usuario']
     conexion = obtener_conexion()
@@ -339,25 +341,28 @@ def inscribir_alumno():
         
     id_club = club['id_club']
     
-    # 1. Verificar si el alumno ya existe en la tabla Alumnos
+    # Verificar si el alumno ya existe
     cursor.execute("SELECT * FROM Alumnos WHERE matricula = %s", (matricula,))
     alumno = cursor.fetchone()
     
     if not alumno:
-        # Si no existe, creamos su cuenta automáticamente (contraseña por defecto = su misma matrícula)
-        cursor.execute("INSERT INTO Alumnos (matricula, nombre_completo, contrasena) VALUES (%s, %s, %s)",
-                       (matricula, nombre, matricula))
-        conexion.commit()
+        # Si no existe, lo creamos con su carrera
+        cursor.execute("INSERT INTO Alumnos (matricula, nombre_completo, carrera, contrasena) VALUES (%s, %s, %s, %s)",
+                       (matricula, nombre, carrera, matricula))
+    else:
+        # Si ya existe, actualizamos su nombre y carrera por si acaso cambiaron
+        cursor.execute("UPDATE Alumnos SET nombre_completo = %s, carrera = %s WHERE matricula = %s",
+                       (nombre, carrera, matricula))
         
-    # 2. Verificar si el alumno ya tiene alguna inscripción previa (para manejar cambios de club)
+    conexion.commit()
+    
+    # Gestionar inscripción al club
     cursor.execute("SELECT * FROM Inscripciones WHERE matricula_alumno = %s", (matricula,))
     inscripcion_previa = cursor.fetchone()
     
     if inscripcion_previa:
-        # Si ya estaba en otro club, actualizamos su club (Cambio de club)
         cursor.execute("UPDATE Inscripciones SET id_club = %s WHERE matricula_alumno = %s", (id_club, matricula))
     else:
-        # Si no tenía club, creamos su inscripción nueva
         cursor.execute("INSERT INTO Inscripciones (matricula_alumno, id_club) VALUES (%s, %s)", (matricula, id_club))
         
     conexion.commit()
