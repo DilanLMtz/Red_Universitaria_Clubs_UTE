@@ -3,22 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <title>Panel del Alumno - UTE</title>
-    <!-- Librería de escaneo QR -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/alumno.css') }}">
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
-    <style>
-        body { font-family: Arial, sans-serif; background-color: #f4f6f9; margin: 0; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
-        .container { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); width: 100%; max-width: 500px; }
-        h2 { color: #2c3e50; margin-top: 0; }
-        .info-box { background: #f8f9fa; border-left: 4px solid #3498db; padding: 12px 15px; margin-bottom: 20px; border-radius: 4px; font-size: 14px; color: #555; }
-        .club-card { background: #e8f8f5; border: 1px solid #a3e4d7; padding: 15px; border-radius: 6px; margin-bottom: 20px; }
-        .club-card h3 { color: #117a65; margin-top: 0; margin-bottom: 8px; }
-        .mensaje { margin-top: 15px; padding: 10px; border-radius: 4px; text-align: center; font-weight: bold; }
-        #reader { width: 100%; border-radius: 4px; overflow: hidden; }
-        .btn { display: inline-block; background: #e67e22; color: white; padding: 8px 14px; border-radius: 4px; text-decoration: none; font-size: 14px; font-weight: bold; margin-top: 10px; }
-        .btn:hover { background: #d35400; }
-        .logout { display: block; text-align: center; margin-top: 20px; color: #e74c3c; text-decoration: none; font-size: 14px; }
-        .logout:hover { text-decoration: underline; }
-    </style>
 </head>
 <body>
     <div class="container">
