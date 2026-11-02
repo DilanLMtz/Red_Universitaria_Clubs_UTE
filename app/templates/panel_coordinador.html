@@ -46,12 +46,25 @@
         <p>Consulta quién asistió a las sesiones por fecha y descarga los reportes.</p>
         <a href="/coordinador/asistencias" class="btn" style="background: #8e44ad;"> Ver Lista e Historial de Asistencias</a>
         <br>
+        <br>
+        <br>
+        <h3 style="color: #2c3e50; margin-top: 0;">Dar de Alta Nuevo Club y Coordinador</h3>
+        <form action="/coordinador/crear-club" method="POST" style="display: flex; flex-direction: column; gap: 10px;">
+            <input type="text" name="nombre_club" placeholder="Nombre del Club (Ej. Club de Robótica)" required style="padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+            <input type="text" name="nombre_coordinador" placeholder="Nombre completo del profesor/coordinador" required style="padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+            <input type="email" name="email_coordinador" placeholder="Correo institucional del coordinador" required style="padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+            <input type="password" name="password" placeholder="Contraseña inicial de acceso" required style="padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+            <button type="submit" class="btn" style="background: #2980b9; color: white; padding: 10px; border: none; border-radius: 4px; font-weight: bold; cursor: pointer;">Registrar Club y Asignar Coordinador</button>
+        </form>
+        <br>    
+        
         <a href="/logout" class="back">Cerrar Sesión</a>
         <br>
         <a href="/cambiar-contrasena" class="back">Cambiar Contraseña</a>
         <br>    
         <br>    
-        <br>    
+        <br>   
+        
         <h3 style="color: #d35400; margin-top: 0;"> Gestión de Ciclo Cuatrimestral</h3>
             <p style="font-size: 14px; color: #555;">
                 El botón de cierre de ciclo libera las inscripciones de los alumnos para el próximo periodo escolar. 
