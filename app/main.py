@@ -327,7 +327,7 @@ def inscribir_alumno():
     
     matricula = request.form.get('matricula').strip()
     nombre = request.form.get('nombre').strip()
-    carrera = request.form.get('carrera').strip() # <-- Nuevo campo
+    carrera = request.form.get('carrera').strip() 
     
     id_usuario = session['id_usuario']
     conexion = obtener_conexion()
@@ -435,7 +435,50 @@ def generar_qr():
     
     return render_template('generar_qr.html', club=club, qr_base64=qr_base64, fecha=hoy)
 
-
+@app.route('/coordinador/crear-club', methods=['POST'])
+def crear_club():
+    if 'id_usuario' not in session:
+        return redirect(url_for('index'))
+        
+    nombre_club = request.form.get('nombre_club').strip()
+    nombre_coordinador = request.form.get('nombre_coordinador').strip()
+    email_coordinador = request.form.get('email_coordinador').strip()
+    password_temporal = request.form.get('password').strip()
+    
+    conexion = obtener_conexion()
+    if not conexion:
+        return "Error de base de datos", 500
+        
+    cursor = conexion.cursor()
+    try:
+        # Usamos 'nombre_completo' y 'Coordinador' con mayúscula tal como está tu ENUM en la BD
+        cursor.execute(
+            "INSERT INTO Usuarios (nombre_completo, correo, contrasena, rol) VALUES (%s, %s, %s, 'Coordinador')",
+            (nombre_coordinador, email_coordinador, password_temporal)
+        )
+        id_nuevo_coordinador = cursor.lastrowid
+        
+        # Insertamos el club vinculado al nuevo coordinador
+        cursor.execute(
+            "INSERT INTO Clubs (nombre_club, id_coordinador) VALUES (%s, %s)",
+            (nombre_club, id_nuevo_coordinador)
+        )
+        
+        conexion.commit()
+    except Exception as e:
+        conexion.rollback()
+        print(f"Error en SQL al crear club: {e}")
+        return f"Error en la base de datos: {e}", 500
+    finally:
+        cursor.close()
+        conexion.close()
+        
+    return """
+        <script>
+            alert('¡Club y coordinador registrados exitosamente!');
+            window.location.href = '/coordinador/asistencias';
+        </script>
+    """
 
 @app.route('/coordinador/reiniciar-ciclo', methods=['POST'])
 def reiniciar_ciclo():
