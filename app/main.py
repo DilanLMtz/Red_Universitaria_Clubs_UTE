@@ -435,6 +435,8 @@ def generar_qr():
     
     return render_template('generar_qr.html', club=club, qr_base64=qr_base64, fecha=hoy)
 
+
+
 @app.route('/coordinador/reiniciar-ciclo', methods=['POST'])
 def reiniciar_ciclo():
     if 'id_usuario' not in session:
@@ -511,7 +513,7 @@ def vista_subir_excel():
     except Exception as e:
         return render_template('subir_excel.html', mensaje=f" Error al leer el Excel: {e}")
 
-    columnas_requeridas = {'matricula', 'nombre_completo', 'nombre_club'}
+    columnas_requeridas = {'matricula', 'nombre_completo', 'nombre_club', 'carrera'}
     if not columnas_requeridas.issubset(df.columns):
         return render_template('subir_excel.html', mensaje=f" El Excel debe tener las columnas: {list(columnas_requeridas)}")
 
@@ -527,11 +529,12 @@ def vista_subir_excel():
         matricula = str(row['matricula']).strip()
         nombre = str(row['nombre_completo']).strip()
         nombre_club = str(row['nombre_club']).strip()
+        carrera = str(row['carrera']).strip() if 'carrera' in row else 'No especificada'  # Manejo de carrera
 
         cursor.execute("SELECT matricula FROM Alumnos WHERE matricula = %s", (matricula,))
         if not cursor.fetchone():
-            cursor.execute("INSERT INTO Alumnos (matricula, nombre_completo, contrasena) VALUES (%s, %s, %s)", 
-                           (matricula, nombre, matricula))
+            cursor.execute("INSERT INTO Alumnos (matricula, nombre_completo, contrasena, carrera) VALUES (%s, %s, %s, %s)", 
+                           (matricula, nombre, matricula, carrera))
             registros_nuevos += 1
 
         cursor.execute("SELECT id_club FROM Clubs WHERE nombre_club = %s", (nombre_club,))
