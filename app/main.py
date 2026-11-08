@@ -121,7 +121,7 @@ def panel_alumno():
     cursor.execute("SELECT nombre_completo, carrera FROM Alumnos WHERE matricula = %s", (matricula_alumno,))
     alumno = cursor.fetchone()
     
-    # Obtener el club y sus múltiples horarios usando la tabla 'horarios'
+    # Obtener el club y los registros de la tabla 'horarios'
     cursor.execute("""
         SELECT c.nombre_club, h.dia_semana, h.hora_inicio, h.hora_fin, h.lugar 
         FROM Inscripciones i 
@@ -251,11 +251,15 @@ def ver_asistencias():
             'asistio': asistio
         })
         
-    return render_template('asistencias_club.html', 
-                           club=club, 
-                           lista_asistencia=lista_asistencia, 
-                           fechas=fechas_registradas, 
-                           fecha_seleccionada=fecha_seleccionada)
+    return render_template(
+        'asistencias_club.html',
+        club=club,
+        lista_asistencia=lista_asistencia,
+        fechas=fechas_registradas,
+        fecha_seleccionada=fecha_seleccionada,
+        id_club=id_club
+    )
+    
 
 
 @app.route('/coordinador/exportar-excel/<fecha>')
@@ -529,16 +533,75 @@ def reiniciar_ciclo():
         </script>
     """
 
+@app.route('/coordinador/configurar-horario', methods=['POST'])
+def configurar_horario():
+    if 'id_usuario' not in session:
+        return redirect(url_for('index'))
+        
+    id_usuario_coordinador = session['id_usuario']
+    dia_semana = request.form.get('dia_semana')
+    hora_inicio = request.form.get('hora_inicio')
+    hora_fin = request.form.get('hora_fin')
+    lugar = request.form.get('lugar')
+    
+    conexion = obtener_conexion()
+    if not conexion:
+        return "Error de base de datos", 500
+        
+    cursor = conexion.cursor(dictionary=True)
+    try:
+        # 1. Buscar automáticamente el club que administra este coordinador logueado
+        cursor.execute("SELECT id_club FROM Clubs WHERE id_coordinador = %s", (id_usuario_coordinador,))
+        club_admin = cursor.fetchone()
+        
+        if not club_admin:
+            return """
+                <script>
+                    alert('Error: No tienes ningún club asignado como coordinador.');
+                    window.location.href = '/coordinador/asistencias';
+                </script>
+            """
+            
+        id_club = club_admin['id_club']
+        
+        # 2. Verificar si ya existe un horario para este club, para actualizarlo o insertarlo
+        cursor.execute("SELECT id_horario FROM horarios WHERE id_club = %s", (id_club,))
+        horario_existente = cursor.fetchone()
+        
+        if horario_existente:
+            # Actualizar el horario existente
+            cursor.execute(
+                """UPDATE horarios 
+                   SET dia_semana = %s, hora_inicio = %s, hora_fin = %s, lugar = %s 
+                   WHERE id_club = %s""",
+                (dia_semana, hora_inicio, hora_fin, lugar, id_club)
+            )
+        else:
+            # Insertar un nuevo horario si no tenía
+            cursor.execute(
+                """INSERT INTO horarios (id_club, dia_semana, hora_inicio, hora_fin, lugar) 
+                   VALUES (%s, %s, %s, %s, %s)""",
+                (id_club, dia_semana, hora_inicio, hora_fin, lugar)
+            )
+            
+        conexion.commit()
+    except Exception as e:
+        conexion.rollback()
+        print(f"Error crítico al configurar horario: {e}")
+        return f"Error en la base de datos: {e}", 500
+    finally:
+        cursor.close()
+        conexion.close()
+        
+    return """
+        <script>
+            alert('¡Horario y ubicación actualizados correctamente!');
+            window.location.href = '/coordinador/asistencias';
+        </script>
+    """
+
 @app.route('/coordinador/subir-excel', methods=['GET', 'POST'])
 def vista_subir_excel():
-
-    config_data = {
-        "fecha_inicio_cuatri": date.today().isoformat() # Guarda la fecha de hoy (Ej: "2026-10-26")
-    }
-    
-    with open('config_cuatri.json', 'w') as f:
-        json.dump(config_data, f)
-
     if 'id_usuario' not in session:
         return redirect(url_for('index'))  # ¡Bloquea el acceso directo!
     
@@ -549,48 +612,78 @@ def vista_subir_excel():
     # Si entra por POST, procesa el archivo Excel 
     archivo = request.files.get('archivo_excel')
     if not archivo or archivo.filename == '':
-        return render_template('subir_excel.html', mensaje=" No se seleccionó ningún archivo.")
+        return render_template('subir_excel.html', mensaje="No se seleccionó ningún archivo.")
     
     try:
         df = pd.read_excel(archivo)
     except Exception as e:
-        return render_template('subir_excel.html', mensaje=f" Error al leer el Excel: {e}")
+        return render_template('subir_excel.html', mensaje=f"Error al leer el Excel: {e}")
 
     columnas_requeridas = {'matricula', 'nombre_completo', 'nombre_club', 'carrera'}
     if not columnas_requeridas.issubset(df.columns):
-        return render_template('subir_excel.html', mensaje=f" El Excel debe tener las columnas: {list(columnas_requeridas)}")
+        return render_template('subir_excel.html', mensaje=f"El Excel debe tener las columnas: {list(columnas_requeridas)}")
 
     conexion = obtener_conexion()
     if not conexion:
-        return render_template('subir_excel.html', mensaje=" Error de conexión con la Base de Datos.")
+        return render_template('subir_excel.html', mensaje="Error de conexión con la Base de Datos.")
     
     cursor = conexion.cursor()
     registros_nuevos = 0
     inscripciones_nuevas = 0
 
-    for _, row in df.iterrows():
-        matricula = str(row['matricula']).strip()
-        nombre = str(row['nombre_completo']).strip()
-        nombre_club = str(row['nombre_club']).strip()
-        carrera = str(row['carrera']).strip() if 'carrera' in row else 'No especificada'  # Manejo de carrera
+    try:
+        for _, row in df.iterrows():
+            matricula = str(row['matricula']).strip()
+            nombre = str(row['nombre_completo']).strip()
+            nombre_club = str(row['nombre_club']).strip()
+            carrera = str(row['carrera']).strip() if 'carrera' in row else 'No especificada'
 
-        cursor.execute("SELECT matricula FROM Alumnos WHERE matricula = %s", (matricula,))
-        if not cursor.fetchone():
-            cursor.execute("INSERT INTO Alumnos (matricula, nombre_completo, contrasena, carrera) VALUES (%s, %s, %s, %s)", 
-                           (matricula, nombre, matricula, carrera))
-            registros_nuevos += 1
+            # 1. Guardar o actualizar la fecha de inicio del cuatriciclo (Cooldown)
+            config_data = {"fecha_inicio_cuatri": date.today().isoformat()}
+            with open('config_cuatri.json', 'w') as f:
+                json.dump(config_data, f)
 
-        cursor.execute("SELECT id_club FROM Clubs WHERE nombre_club = %s", (nombre_club,))
-        resultado_club = cursor.fetchone()
+            # 2. Registrar alumno si no existe (con su carrera)
+            cursor.execute("SELECT matricula FROM Alumnos WHERE matricula = %s", (matricula,))
+            if not cursor.fetchone():
+                cursor.execute(
+                    "INSERT INTO Alumnos (matricula, nombre_completo, contrasena, carrera) VALUES (%s, %s, %s, %s)", 
+                    (matricula, nombre, matricula, carrera)
+                )
+                registros_nuevos += 1
+            else:
+                # Actualizar carrera por si cambió
+                cursor.execute("UPDATE Alumnos SET carrera = %s WHERE matricula = %s", (carrera, matricula))
 
-        if resultado_club:
-            id_club = resultado_club[0]
+            # 3. Verificar si el club existe; si no, crearlo automáticamente
+            cursor.execute("SELECT id_club FROM Clubs WHERE nombre_club = %s", (nombre_club,))
+            resultado_club = cursor.fetchone()
+
+            if resultado_club:
+                id_club = resultado_club[0]
+            else:
+                cursor.execute("INSERT INTO Clubs (nombre_club) VALUES (%s)", (nombre_club,))
+                id_club = cursor.lastrowid
+
+            # 4. Inscribir al alumno al club si no está inscrito
             cursor.execute("SELECT id_inscripcion FROM Inscripciones WHERE matricula_alumno = %s AND id_club = %s", 
                            (matricula, id_club))
             if not cursor.fetchone():
                 cursor.execute("INSERT INTO Inscripciones (matricula_alumno, id_club) VALUES (%s, %s)", 
                                (matricula, id_club))
                 inscripciones_nuevas += 1
+
+        conexion.commit()
+    except Exception as e:
+        conexion.rollback()
+        cursor.close()
+        conexion.close()
+        return render_template('subir_excel.html', mensaje=f"Error al procesar datos: {e}")
+
+    cursor.close()
+    conexion.close()
+    
+    return render_template('subir_excel.html', mensaje=f"¡Excel procesado con éxito! Alumnos nuevos: {registros_nuevos}, Inscripciones: {inscripciones_nuevas}")
     
 
     conexion.commit()
