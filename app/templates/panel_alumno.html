@@ -6,12 +6,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/alumno.css') }}">
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    
 </head>
 <body>
-    <div class="container">
+    <header class="ute-header">
+        <h1>Red Universitaria de Clubs UTE</h1>
         <h2>Panel del Alumno </h2>
+    </header>
+    <div class="container">
         
-        <!-- Datos generales del alumno -->
         <div class="info-box">
             <p style="margin: 0 0 5px 0;"><b>Alumno:</b> {{ nombre }}</p>
             <p style="margin: 0;"><b>Carrera:</b> {{ carrera }}</p>

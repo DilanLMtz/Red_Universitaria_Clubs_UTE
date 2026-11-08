@@ -7,10 +7,13 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/coordinador.css') }}">
 </head>
 <body>
-    <div class="container">
+    <header class="ute-header">
+    <h1>Red Universitaria de Clubs UTE</h1>
         <h2>Panel del Coordinador </h2>
         <p>Bienvenido, <b>{{ nombre }}</b>. Administra los clubs y gestiona las asistencias.</p>
-        
+    </header>
+    <div class="container">
+
         {% if error %}
             <div class="error">{{ error }}</div>
         {% endif %}
@@ -31,7 +34,7 @@
 
         <h3>Lista de Asistencia e Historial</h3>
         <p>Consulta quién asistió a las sesiones por fecha y descarga los reportes.</p>
-        <a href="/coordinador/asistencias" class="btn" style="background: #8e44ad;"> Ver Lista e Historial de Asistencias</a>
+        <a href="/coordinador/asistencias" class="btn"> Ver Lista e Historial de Asistencias</a>
         <br>
         <br>
         <br>

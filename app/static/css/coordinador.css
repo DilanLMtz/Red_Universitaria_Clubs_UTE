@@ -1,0 +1,97 @@
+/* --- ESTILOS OFICIALES UTE & MODO OSCURO --- */
+:root {
+    --bg-color: #f4f6f9;
+    --card-bg: #ffffff;
+    --text-color: #2c3e50;
+    --primary-orange: #ff7a00;
+    --primary-orange-hover: #e06b00;
+    --border-color: #d5dbdb;
+    --header-bg: #ff7a00;
+}
+
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    margin: 0;
+    padding: 0;
+    transition: background 0.3s, color 0.3s;
+}
+
+/* Barra Superior Estilo UTE */
+.ute-header {
+    background-color: var(--header-bg);
+    border-bottom: 4px solid #e06b00;
+    padding: 12px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap; 
+    gap: 10px;        
+    color: white;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.ute-header h1 {
+    font-size: 16px;  
+    margin: 0;
+    font-weight: bold;
+}
+
+/* Contenedores y Tarjetas */
+.container {
+    background: var(--card-bg);
+    padding: 25px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    width: 90%;
+    max-width: 600px;
+    margin: 30px auto;
+    border: 1px solid var(--border-color);
+}
+
+/* Botones Principales Naranja UTE */
+.btn {
+    background-color: var(--primary-orange);
+    color: white;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 4px;
+    font-weight: bold;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-block;
+    text-align: center;
+}
+.btn:hover {
+    background-color: var(--primary-orange-hover);
+}
+
+/* Tablas responsivas */
+.table-responsive {
+    width: 100%;
+    overflow-x: auto;
+    margin-top: 15px;
+}
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+th, td {
+    padding: 10px;
+    border-bottom: 1px solid var(--border-color);
+    text-align: left;
+    color: var(--text-color);
+}
+
+.back { 
+    display: block; 
+    margin-top: 20px; 
+    color: #e74c3c; 
+    text-decoration: none; 
+    font-size: 14px; 
+}
+.back:hover { 
+    text-decoration: underline; 
+}
